@@ -36,10 +36,9 @@ COCO_CATEGORY_NAMES = [
 
 class COCOWrapper(CocoDetection):
     """
-    CocoDetection 상속.
-    annotation의 bbox: [x, y, w, h] (왼상단 좌표+너비+높이).
-    -> (cx, cy, w, h) 로 변환
-    -> 라벨은 category_id -> index 로 매핑
+    CocoDetection
+    annotation bbox: [x, y, w, h] -> (cx, cy, w, h)
+    label category_id -> index
     """
     def __init__(self, root, annFile, transform=None):
         super().__init__(root, annFile, transform=transform)
@@ -66,7 +65,6 @@ class COCOWrapper(CocoDetection):
         for ann in anns:
             cat_id = ann["category_id"]
             if cat_id not in self.catId_to_labelIdx:
-                # 안 쓰는 category
                 continue
             label_idx = self.catId_to_labelIdx[cat_id]
 
@@ -99,7 +97,7 @@ def train_one_epoch(model, criterion, data_loader, optimizer, device):
     for step, (images, boxes, labels) in enumerate(data_loader):
         images = images.to(device)
 
-        # 타겟 만들기
+        # Target
         targets = []
         for b, l in zip(boxes, labels):
             targets.append({
@@ -126,7 +124,7 @@ def train_one_epoch(model, criterion, data_loader, optimizer, device):
 @torch.no_grad()
 def evaluate(model, criterion, data_loader, device):
     """
-    Accuracy, IoU, 간단한 mAP(Prec/Recall/F1) 계산
+    Accuracy, IoU, mAP(Prec/Recall/F1)
     """
     model.eval()
     criterion.eval()
@@ -149,21 +147,20 @@ def evaluate(model, criterion, data_loader, device):
         pred_logits, pred_boxes = model(images)
         outputs = {"pred_logits": pred_logits, "pred_boxes": pred_boxes}
 
-        # 매칭
+        # Matching
         indices = criterion.matcher(outputs, targets)
 
         batch_size = images.shape[0]
         for b_idx in range(batch_size):
             q_idx, t_idx = indices[b_idx]
             if len(q_idx) == 0:
-                # 매칭된 쿼리 X
                 fn += len(targets[b_idx]["labels"])
                 continue
 
             pred_cls = pred_logits[b_idx, q_idx].argmax(dim=-1)
             gt_cls   = targets[b_idx]["labels"][t_idx]
 
-            # IoU (배열 대각선만)
+            # IoU
             ious_mat = generalized_iou(pred_boxes[b_idx, q_idx], targets[b_idx]["boxes"][t_idx])
             ious_diag = ious_mat.diagonal()
 
@@ -176,7 +173,7 @@ def evaluate(model, criterion, data_loader, device):
             mask_tp = (pred_cls == gt_cls) & (ious_diag > 0.5)
             tp_batch = mask_tp.sum().item()
 
-            # 배경 아닌 예측
+            # No background
             pred_bg_mask = (pred_logits[b_idx].argmax(dim=-1) == 0)
             pred_non_bg  = (~pred_bg_mask).sum().item()
             fp_batch = pred_non_bg - tp_batch

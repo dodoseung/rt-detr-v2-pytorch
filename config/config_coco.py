@@ -4,6 +4,7 @@ class Config:
     RUN_DATE = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
 
     # COCO 이미지/어노테이션 경로
+    # Download dataset from here: https://cocodataset.org/#download
     COCO_IMG_TRAIN = "./data/coco/images/train2017/"
     COCO_IMG_VAL = "./data/coco/images/val2017/"
     COCO_ANN_TRAIN = "./data/coco/annotations/instances_train2017.json"
