@@ -143,6 +143,7 @@ def main():
             draw.rectangle([x_min, y_min, x_max, y_max], outline="red", width=2)
             cls_name = COCO_CATEGORY_NAMES[cls_id] if cls_id < len(COCO_CATEGORY_NAMES) else f"cls{cls_id}"
             text = f"{cls_name} {score:.2f}"
+            print(text)
             draw.text((x_min, y_min), text, fill="red", font=font)
 
         # Saving
